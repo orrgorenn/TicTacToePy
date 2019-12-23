@@ -1,12 +1,18 @@
-import random
+import math
 
 gameBoard = [" ", " ", " ",
-            " ", " ", " ",
-            " ", " ", " "]
+             " ", " ", " ",
+             " ", " ", " "]
 
-winner = None
-current_player = 'X'
-game_not_over = True
+scoreForMM = {
+    'X': 10,
+    'O': -10,
+    'tie': 0
+}
+
+ai = 'X'
+human = 'O'
+current_player = human
 
 def print_board():
     print(gameBoard[0] + " | " + gameBoard[1] + " | " + gameBoard[2])
@@ -16,85 +22,111 @@ def print_board():
     print(gameBoard[6] + " | " + gameBoard[7] + " | " + gameBoard[8])
     print()
 
-def handle_turn(player):
-    if player == 'O':
+    if check_winner() == 'tie':
+        print("It's a tie")
+        exit(1)
+    elif check_winner() == ai:
+        print("You lost! LOSER!")
+        exit(1)
+    elif check_winner() == human:
+        print("Congratz! you won!")
+        exit(1)
+
+def bestMoveForAi():
+    global current_player
+    # AI Player
+    bestScore = -math.inf
+    i = 0
+    bestMove = 0
+    while i < len(gameBoard):
+        if gameBoard[i] == ' ':
+            gameBoard[i] = ai
+            score = minimax(gameBoard, 0, False)
+            gameBoard[i] = ' '
+            if score > bestScore:
+                bestScore = score
+                bestMove = i
+        i += 1
+    gameBoard[bestMove] = ai
+    current_player = human
+    user_turn()
+
+def user_turn():
+    global current_player
+
+    print_board()
+    if current_player == human:
         pos = input("Choose your position (1-9): ")
         pos = int(pos)
         while pos < 1 or pos > 9 or gameBoard[pos - 1] != ' ':
             pos = int(input("Wrong place. Please choose again: "))
-    elif player == 'X':
-        pos = random.randint(0, 9)
-        while gameBoard[pos - 1] != ' ':
-            pos = random.randint(0, 9)
-    gameBoard[pos - 1] = player
-    print_board()
+        gameBoard[pos - 1] = current_player
+        current_player = ai
+        bestMoveForAi()
 
-def flip_player():
-    global current_player
-
-    if (current_player == 'X'):
-        current_player = 'O'
-    else:
-        current_player = 'X'
-
-def start_game():
-    global winner
-
-    # Display initial board
+def start_game():# Display initial board
     print_board()
     print("Let the games begin...\n")
-    while game_not_over:
-        handle_turn(current_player)
-        is_game_over()
-        flip_player()
-    if winner is not None:
-        print("Congratulations! " + winner + " won!")
-    else:
-        print("GAME OVER - A Tie...")
+    bestMoveForAi()
 
 def check_winner():
-    global winner
+    winner = None
 
     if gameBoard[0] == gameBoard[1] == gameBoard[2] != ' ':
         winner = gameBoard[0]
-        return True
     if gameBoard[3] == gameBoard[4] == gameBoard[5] != ' ':
         winner = gameBoard[3]
-        return True
     if gameBoard[6] == gameBoard[7] == gameBoard[8] != ' ':
         winner = gameBoard[6]
-        return True
     if gameBoard[0] == gameBoard[3] == gameBoard[6] != ' ':
         winner = gameBoard[0]
-        return True
     if gameBoard[1] == gameBoard[4] == gameBoard[7] != ' ':
         winner = gameBoard[1]
-        return True
     if gameBoard[2] == gameBoard[5] == gameBoard[8] != ' ':
         winner = gameBoard[2]
-        return True
     if gameBoard[0] == gameBoard[4] == gameBoard[8] != ' ':
         winner = gameBoard[0]
-        return True
     if gameBoard[2] == gameBoard[4] == gameBoard[6] != ' ':
         winner = gameBoard[2]
-        return True
-    return False
 
-def check_full_board():
+    openSpots = 0
     for i in gameBoard:
         if i == ' ':
-            return False
-    return True
+            openSpots += 1
+    if winner == None and openSpots == 0:
+        return 'tie'
+    else:
+        return winner
 
-def check_tie():
-    if check_winner() == False and check_full_board() == True:
-        return True
-    return False
+def minimax(board, depth, isMaximizing):
+    result = check_winner()
 
-def is_game_over():
-    global game_not_over
-    game_not_over = not (check_tie() or check_winner())
+    if result is not None:
+        score = scoreForMM[result]
+        return score
+
+    if isMaximizing:
+        bestScore = -math.inf
+        i = 0
+        while i < len(gameBoard):
+            if gameBoard[i] == ' ':
+                gameBoard[i] = ai
+                score = minimax(gameBoard, depth + 1, False)
+                gameBoard[i] = ' '
+                bestScore = max(score, bestScore)
+            i += 1
+        return bestScore
+    else:
+        bestScore = math.inf
+        i = 0
+        while i < len(gameBoard):
+            if gameBoard[i] == ' ':
+                gameBoard[i] = human
+                score = minimax(gameBoard, depth + 1, True)
+                gameBoard[i] = ' '
+                bestScore = min(score, bestScore)
+            i += 1
+        return bestScore
 
 if __name__ == "__main__":
     start_game()
